@@ -1,0 +1,25 @@
+[DEFAULT]
+num_points = 4096
+max_distance = 100
+dataset_name = TUM
+dataset_folder = ""
+
+[TRAIN]
+num_workers = 8
+batch_size = 10
+batch_size_limit = 10
+batch_expansion_rate = 1.4
+batch_expansion_th = 0.7
+
+lr = 1e-3
+epochs = 150
+scheduler_milestones = 30
+
+aug_mode = 1
+weight_decay = 1e-3
+
+loss = BatchHardTripletMarginLoss
+normalize_embeddings = False
+margin = 0.2
+
+train_file = tum_training_queries_frame_5m.pickle
