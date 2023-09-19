@@ -8,8 +8,11 @@ CASSPR uses a dual-branch hierarchical cross attention transformer to combine th
 
 
 ✅ Up to 62% less inference time
+
 ✅ Up to 91% less memory
+
 ✅ Excellent loop-closure on KITTI Odometry benchmark
+
 ✅ SOTA on USyd, TUM, and Oxford RobotCar
 
 
