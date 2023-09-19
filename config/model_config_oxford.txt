@@ -11,14 +11,6 @@ feature_size = 256
 output_dim = 256
 gpu = 3
 
-[FCGF]
-in_channels = 1
-out_channels = 256
-bn_momentum = 0.1
-normalize_feature = True
-conv1_kernel_size = 5
-D = 3
-
 [POINTNET]
 with_pntnet = False
 pnt2s = True
@@ -46,15 +38,3 @@ ca_val_has_pos_emb = True
 num_encoder_layers = 2
 transformer_encoder_has_pos_emb = True
 
-[MULTI-CROSS-ATTENTION]
-with_multi_att = False
-num_heads = 2
-d_feedforward = 64
-dropout = 0
-transformer_act = relu
-pre_norm = True
-attention_type = dot_prod
-sa_val_has_pos_emb = True
-ca_val_has_pos_emb = True
-num_encoder_layers = 2
-transformer_encoder_has_pos_emb = True

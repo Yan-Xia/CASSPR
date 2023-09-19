@@ -12,10 +12,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import MinkowskiEngine as ME
-from models.minkfpn import MinkFPN, MinkFPN_v1
+from models.minkfpn import MinkFPN
 from models.netvlad import MinkNetVladWrapper
 import layers.pooling as layers_pooling
-from models.FCGF.resunet import ResUNetBN2C
 
 class PNT_GeM(nn.Module):
     def __init__(self, p=3, eps=1e-6, kernel=(4096,1)):
@@ -42,7 +41,6 @@ class MinkLoc(torch.nn.Module):
         self.with_pntnet = True if 'pointnet' in combine_params else False
         self.with_self_att = True if 'self_attention' in combine_params else False
         self.with_cross_att = True if 'pointnet_cross_attention' in combine_params else False
-        self.with_multi_att =  True if 'multi_cross_attention' in combine_params else False
         self.planes = planes
 
         if self.with_pntnet or self.with_cross_att:
@@ -53,14 +51,6 @@ class MinkLoc(torch.nn.Module):
                                            output_dim=feature_size if self.with_pntnet else planes[0])
             if self.with_pntnet:
                 self.pntnet_pooling = PNT_GeM(kernel=(self.num_points,1))
-        if self.with_multi_att:
-            self.small_backbone = MinkFPN_v1(   in_channels=in_channels,
-                                                out_channels=planes[0],
-                                                num_top_down=num_top_down,
-                                                conv0_kernel_size=conv0_kernel_size,
-                                                layers=layers, planes=planes,
-                                                combine_params={}) 
-        
         self.in_channels = in_channels
         self.feature_size = feature_size    # Size of local features produced by local feature extraction block
         self.output_dim = output_dim        # Dimensionality of the global descriptor
@@ -70,15 +60,7 @@ class MinkLoc(torch.nn.Module):
                                     num_top_down=num_top_down,
                                     conv0_kernel_size=conv0_kernel_size,
                                     layers=layers, planes=planes,
-                                    combine_params=combine_params) 
-        elif backbone == 'FCGF':
-            self.backbone = ResUNetBN2C(in_channels=combine_params['FCGF']['in_channels'],
-                                        out_channels=combine_params['FCGF']['out_channels'],
-                                        bn_momentum=combine_params['FCGF']['bn_momentum'],
-                                        normalize_feature=combine_params['FCGF']['normalize_feature'],
-                                        conv1_kernel_size=combine_params['FCGF']['conv1_kernel_size'],
-                                        D=combine_params['FCGF']['D'])
-            
+                                    combine_params=combine_params)     
         self.n_backbone_features = output_dim
         if pooling == 'Max':
             assert self.feature_size == self.output_dim, 'output_dim must be the same as feature_size'

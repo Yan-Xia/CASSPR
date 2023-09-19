@@ -1,8 +1,3 @@
-# Author: Jacek Komorowski
-# Warsaw University of Technology
-# Modified by: Kamil Zywanowski, Adam Banaszczyk, Michal Nowicki (Poznan University of Technology 2021)
-
-
 import os
 import configparser
 import time
@@ -19,7 +14,7 @@ class ModelParams:
         self.model_params_path = model_params_path
         self.gpu = params.getint('gpu')
         self.backbone = params.get('backbone')
-        assert self.backbone in ['MinkFPN', 'FCGF'], 'Supported Backbone are: MinkFPN, FCGF'
+        assert self.backbone in ['MinkFPN'], 'Supported Backbone are: MinkFPN'
         self.pooling = params.get('pooling')
         assert self.pooling in ['Max', 'GeM', 'NetVlad', 'NetVlad_CG'], 'Supported Pooling are: Max, GeM, NetVlad, NetVlad_CG'
         self.output_dim = params.getint('output_dim', 256)  # Size of the final descriptor
@@ -29,11 +24,6 @@ class ModelParams:
             self.cluster_size = params.getint('cluster_size', 64)  # Size of NetVLAD cluster
             self.gating = params.getboolean('gating', True)  # Use gating after the NetVlad
 
-        #######################################################################
-        # Model dependent
-        #######################################################################
-
-        # Models using MinkowskiEngine
         self.mink_quantization_size = [float(item) for item in params['mink_quantization_size'].split(',')]
         self.version = params['version']
         assert self.version in ['MinkLoc3D', 'MinkLoc3D-I', 'MinkLoc3D-S', 'MinkLoc3D-SI'], 'Supported versions ' \
@@ -41,8 +31,7 @@ class ModelParams:
                                                                                             'MinkLoc3D-I, ' \
                                                                                             'MinkLoc3D-S, ' \
                                                                                             'MinkLoc3D-SI '
-        # Size of the local features from backbone network (only for MinkNet based models)
-        # For PointNet-based models we always use 1024 intermediary features
+        
         self.feature_size = params.getint('feature_size', 256)
         if 'planes' in params:
             self.planes = [int(e) for e in params['planes'].split(',')]
@@ -57,36 +46,22 @@ class ModelParams:
         self.num_top_down = params.getint('num_top_down', 1)
         self.conv0_kernel_size = params.getint('conv0_kernel_size', 5)
 
-        combine_modules = ['POINTNET', 'SELF-ATTENTION', 'POINTNET-CROSS-ATTENTION', 'MULTI-CROSS-ATTENTION'] \
-                          if self.backbone == 'MinkFPN' else ['POINTNET', 'FCGF']
+        combine_modules = ['POINTNET', 'SELF-ATTENTION', 'POINTNET-CROSS-ATTENTION'] \
+                          if self.backbone == 'MinkFPN' else 'POINTNET'
         combine_modules = {} if self.version not in ['MinkLoc3D-S', 'MinkLoc3D-SI', 'MinkLoc3D'] else combine_modules
         self.get_combine_params(config, combine_modules)
         assert isinstance(self.combine_params, Dict)
 
     def get_combine_params(self, config, combine_modules):
         self.combine_params = {}
-        fcgf_params = config['FCGF'] if 'FCGF' in combine_modules else None
         pntnet_params = config['POINTNET'] if 'POINTNET' in combine_modules else None
         self_att_params = config['SELF-ATTENTION'] if 'SELF-ATTENTION' in combine_modules else None
         cross_att_params = config['POINTNET-CROSS-ATTENTION'] if 'POINTNET-CROSS-ATTENTION' in combine_modules else None
-        multi_att_params = config['MULTI-CROSS-ATTENTION'] if 'MULTI-CROSS-ATTENTION' in combine_modules else None
 
         with_pntnet = pntnet_params.getboolean('with_pntnet') if self_att_params is not None else None
         with_cross_att = cross_att_params.getboolean('with_cross_att') if cross_att_params is not None else None
         with_self_att = self_att_params.getboolean('with_self_att') if self_att_params is not None else None
-        with_multi_att = multi_att_params.getboolean('with_multi_att') if multi_att_params is not None else None
         assert not(with_pntnet and with_cross_att), 'Options: with_pntnet or with_cross_att or Neither '
-        assert not(with_self_att and with_multi_att), 'Options: with_self_att or with_multi_att or Neither '
-        assert not(with_cross_att and with_multi_att), 'Options: with_cross_att or with_multi_att or Neither '
-
-        if fcgf_params is not None:
-            fcgf_combine_params = {'FCGF': { 'in_channels': fcgf_params.getint('in_channels'),
-                                             'out_channels': fcgf_params.getint('out_channels'),
-                                             'bn_momentum': fcgf_params.getfloat('bn_momentum'),
-                                             'normalize_feature': fcgf_params.getboolean('normalize_feature'),
-                                             'conv1_kernel_size': fcgf_params.getint('conv1_kernel_size'),
-                                             'D': fcgf_params.getint('D') }}
-            self.combine_params = {**self.combine_params, **fcgf_combine_params}
 
         if with_pntnet:
             pntnet_combine_params = {'pointnet': { 'pnt2s': pntnet_params.getboolean('pnt2s') }}
@@ -118,22 +93,6 @@ class ModelParams:
                                                             "num_encoder_layers": cross_att_params.getint('num_encoder_layers'),
                                                             "transformer_encoder_has_pos_emb": cross_att_params.getboolean('transformer_encoder_has_pos_emb') }}
             self.combine_params = {**self.combine_params, **cross_att_combine_params}
-        if with_multi_att:
-            with_multi_att_params = {'multi_cross_attention':{
-                                                            "nhead": multi_att_params.getint('num_heads'),
-                                                            "d_feedforward": multi_att_params.getint("d_feedforward"),
-                                                            "dropout": multi_att_params.getint("dropout"),
-                                                            "transformer_act": multi_att_params['transformer_act'],
-                                                            "pre_norm": multi_att_params.getboolean("pre_norm"),
-                                                            "attention_type": multi_att_params['attention_type'],
-                                                            "sa_val_has_pos_emb": multi_att_params.getboolean('sa_val_has_pos_emb'),
-                                                            "ca_val_has_pos_emb": multi_att_params.getboolean('ca_val_has_pos_emb'),
-                                                            "num_encoder_layers": multi_att_params.getint('num_encoder_layers'),
-                                                            "transformer_encoder_has_pos_emb": multi_att_params.getboolean('transformer_encoder_has_pos_emb')
-            }}
-            self.combine_params = {**self.combine_params, **with_multi_att_params}
-            if self.version != 'MINKLOC3D-S':
-                NotImplementedError('MULTI-CROSS-ATTENTION is currently only supported in MINKLOC3D-S')
 
     def print(self):
         print('Model parameters:')
@@ -246,12 +205,8 @@ class MinkLocParams:
         self.val_file = params.get('val_file', None)
 
         if self.dataset_name == 'USyd':
-            self.eval_database_files = ['usyd_evaluation_database_new_small.pickle']
-            self.eval_query_files = ['usyd_evaluation_query_new_small.pickle']
-
-        elif self.dataset_name == 'IntensityOxford':
-            self.eval_database_files = ['intensityOxford_evaluation_database.pickle']
-            self.eval_query_files = ['intensityOxford_evaluation_query.pickle']
+            self.eval_database_files = ['usyd_evaluation_database.pickle']
+            self.eval_query_files = ['usyd_evaluation_query.pickle']
 
         elif self.dataset_name == 'Oxford':
             self.eval_database_files = ['oxford_evaluation_database.pickle', 'business_evaluation_database.pickle',

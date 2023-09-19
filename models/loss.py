@@ -91,6 +91,7 @@ class BatchHardTripletLossWithMasks:
         loss = self.loss_fn(embeddings, dummy_labels, hard_triplets)
         # print('\nLoss:', loss)
         stats = {'loss': loss.item(), 'avg_embedding_norm': self.loss_fn.distance.final_avg_query_norm,
+                 'num_non_zero_triplets': self.loss_fn.reducer.triplets_past_filter,
                  'num_triplets': len(hard_triplets[0]),
                  'mean_pos_pair_dist': self.miner_fn.mean_pos_pair_dist,
                  'mean_neg_pair_dist': self.miner_fn.mean_neg_pair_dist,

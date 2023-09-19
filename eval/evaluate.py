@@ -177,7 +177,7 @@ def get_latent_vectors(model, set, device, params, time_file=None):
 
     for i, elem_ndx in enumerate(set):
         x, x_s = load_pc(set[elem_ndx]["query"], params)
-        import code; code.interact(local=locals())
+        # import code; code.interact(local=locals())
         with torch.no_grad():
             # models without intensity
             if params.model_params.version in ['MinkLoc3D', 'MinkLoc3D-S']:
@@ -208,7 +208,7 @@ def get_latent_vectors(model, set, device, params, time_file=None):
                 pnt_coords = x_s if include_pnt2s else x
                 batch['pnt_coords'] = pnt_coords.unsqueeze(dim=0).to(device)
 
-            import code; code.interact(local=locals())
+            # import code; code.interact(local=locals())
             embedding = model(batch, time_file=time_file)
 
             # embedding is (1, 256) tensor

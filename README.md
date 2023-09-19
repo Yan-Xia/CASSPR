@@ -1,5 +1,11 @@
 # CASSPR
-The codes for ICCV2023 paper ' CASSPR: Cross Attention Single Scan Place Recognition'
+The codes for ICCV2023 paper 'CASSPR: Cross Attention Single Scan Place Recognition'
+
+This repository is the official implementation for paper:
+
+CASSPR: Cross Attention Single Scan Place Recognition
+
+
 
 ## Installation
 
@@ -11,8 +17,13 @@ conda activate casspr
 conda install pytorch==1.13.1 torchvision==0.14.1 pytorch-cuda=11.6 -c pytorch -c nvidia
 conda install numpy ninja tqdm tensorboard scikit-learn
 pip install -U git+https://github.com/NVIDIA/MinkowskiEngine -v --no-deps # commit 02fc608bea4c0549b0a7b00ca1bf15dee4a0b228
-pip install open3d torchtyping linear_attention_transformer future_fstrings bitarray pytorch_metric_learning
-
-cd models/cuda_ops
-python setup.py install
+pip install open3d torchtyping linear_attention_transformer future_fstrings bitarray pytorch_metric_learning(1.1.2)
+pip install psutil
+# cd models/transformer/cuda_ops
+# python setup.py install
 ```
+
+cd training
+
+# To train the desired model on the USyd Dataset
+python train.py --config ../config/config_usyd.txt --model_config ../models/minkloc_config.txt

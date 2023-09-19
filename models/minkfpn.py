@@ -1,6 +1,3 @@
-# Author: Jacek Komorowski
-# Warsaw University of Technology
-
 from re import S
 import torch.nn as nn
 import torch
@@ -257,62 +254,8 @@ class MinkFPN(ResNetBase):
                     self_attention_time += start.elapsed_time(end)
                 tmp_num_attention_layers -= 1
 
-        # if self.with_cross_att:
-        #     # print (x.size())
-        #     # exit()
-        #     x = self.combine_cross_attention(x, y_c, y_f)
 
         attention_time = [self_attention_time, cross_attention_time_dict['linear_attention'], cross_attention_time_dict['dot_prod']]
 
         return x, attention_time
 
-
-class MinkFPN_v1(MinkFPN):
-    def __init__(self, in_channels, out_channels, num_top_down=1, conv0_kernel_size=5, block=BasicBlock,
-                layers=(1, 1, 1), planes=(32, 64, 64), combine_params=None):
-        MinkFPN.__init__(self, 
-                         in_channels=in_channels, 
-                         out_channels=in_channels,
-                         num_top_down=num_top_down,
-                         conv0_kernel_size=conv0_kernel_size,
-                         block=block,
-                         layers=layers,
-                         planes=planes,
-                         combine_params={})
-
-    def forward(self, x, y_c=None, y_f=None):
-        # *** BOTTOM-UP PASS ***
-        # First bottom-up convolution is special (with bigger stride)
-        feature_maps = []
-        x = self.conv0(x)
-        x = self.bn0(x)
-        x = self.relu(x)
-        # if self.num_top_down == self.num_bottom_up:
-        #     feature_maps.append(x)
-
-        # if self.with_cross_att:
-        #     x = self.combine_cross_attention(x, y_c, y_f)
-
-        # if self.with_self_att:
-        #     pos_embeds = self.pos_embed(x.C[:, 1:].to(torch.float))
-        #     x = self.self_attention(x, pos_embeds)
-        
-        # # BOTTOM-UP PASS
-        # for ndx, (conv, bn, block) in enumerate(zip(self.convs, self.bn, self.blocks)):
-        #     x = conv(x)     # Decreases spatial resolution (conv stride=2)
-        #     x = bn(x)
-        #     x = self.relu(x)
-        #     x = block(x) # after here results differ each time
-        #     if self.num_bottom_up - 1 - self.num_top_down <= ndx < len(self.convs) - 1:
-        #         feature_maps.append(x)
-
-        # assert len(feature_maps) == self.num_top_down
-
-        # x = self.conv1x1[0](x)
-
-        # # TOP-DOWN PASS
-        # for ndx, tconv in enumerate(self.tconvs):
-        #     x = tconv(x)        # Upsample using transposed convolution
-        #     x = x + self.conv1x1[ndx+1](feature_maps[-ndx - 1])
-
-        return x
