@@ -9,7 +9,7 @@ num_top_down = 1
 conv0_kernel_size = 5
 feature_size = 256
 output_dim = 256
-gpu = 3
+gpu = 0
 
 [POINTNET]
 with_pntnet = False

@@ -2,12 +2,12 @@
 num_points = 4096
 max_distance = 100
 dataset_name = USyd
-dataset_folder = /usr/wiss/xiya/storage/user/xia/data/USyd
+dataset_folder =
 
 [TRAIN]
 num_workers = 1
-batch_size = 16
-batch_size_limit = 16
+batch_size = 20
+batch_size_limit = 20
 batch_expansion_rate = 1.4
 batch_expansion_th = 0.7
 
