@@ -6,6 +6,7 @@ import numpy as np
 import os
 from sklearn.neighbors import KDTree
 import pickle
+import argparse
 
 #####For training and test data split#####
 x_width = 100
@@ -99,23 +100,29 @@ def construct_query_and_database_sets(base_path, runs_folder, folders, pointclou
     output_to_file(database_sets, output_name + '_evaluation_database.pickle')
     output_to_file(test_sets, output_name + '_evaluation_query.pickle')
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', type=str, help='Path to data directory')
+    args = parser.parse_args()
 
-###Building database and query files for evaluation
+    base_path = args.data_dir
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-base_path = "/usr/wiss/xiya/storage/user/xia/data/USyd/"
+    ###Building database and query files for evaluation
 
-# For USyd
-runs_folder = "weeks/"
-pointcloud_fols = "/pointclouds_with_locations_5m/"
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # base_path = "/usr/wiss/xiya/storage/user/xia/data/USyd/"
 
-folders = []
-filenames = []
-validation_weeks = [1, 2, 3, 4, 5, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25,
-                    26, 27, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 46, 45, 47, 49, 52]
+    # For USyd
+    runs_folder = "weeks/"
+    pointcloud_fols = "/pointclouds_with_locations_5m/"
 
-folders = [f'output_week{week}' for week in validation_weeks]
-filenames = [f'pointcloud_locations_5m_week_{str(week).zfill(2)}.csv' for week in validation_weeks]
-print(folders)
-print(filenames)
-construct_query_and_database_sets(base_path, runs_folder, folders, pointcloud_fols, filenames, p, "usyd")
+    folders = []
+    filenames = []
+    validation_weeks = [1, 2, 3, 4, 5, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25,
+                        26, 27, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 46, 45, 47, 49, 52]
+
+    folders = [f'output_week{week}' for week in validation_weeks]
+    filenames = [f'pointcloud_locations_5m_week_{str(week).zfill(2)}.csv' for week in validation_weeks]
+    print(folders)
+    print(filenames)
+    construct_query_and_database_sets(base_path, runs_folder, folders, pointcloud_fols, filenames, p, "usyd")

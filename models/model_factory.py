@@ -7,7 +7,7 @@ import models.minkloc as minkloc
 def model_factory(params):
     in_channels = 1
 
-    model = minkloc.MinkLoc(backbone=params.model_params.backbone, 
+    model = minkloc.MinkLoc(backbone=params.model_params.backbone,
                             pooling=params.model_params.pooling,
                             in_channels=in_channels,
                             feature_size=params.model_params.feature_size,
@@ -17,6 +17,7 @@ def model_factory(params):
                             num_top_down=params.model_params.num_top_down,
                             conv0_kernel_size=params.model_params.conv0_kernel_size,
                             num_points=params.num_points,
-                            combine_params=params.model_params.combine_params)
+                            combine_params=params.model_params.combine_params,
+                            dataset_name=params.dataset_name,)
 
     return model

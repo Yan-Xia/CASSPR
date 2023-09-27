@@ -31,7 +31,7 @@ class ModelParams:
                                                                                             'MinkLoc3D-I, ' \
                                                                                             'MinkLoc3D-S, ' \
                                                                                             'MinkLoc3D-SI '
-        
+
         self.feature_size = params.getint('feature_size', 256)
         if 'planes' in params:
             self.planes = [int(e) for e in params['planes'].split(',')]

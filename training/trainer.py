@@ -60,10 +60,13 @@ def do_train(dataloaders, params: MinkLocParams, ckpt=None, debug=False, visuali
     now = datetime.now()
     now_strftime = now.strftime("%Y%m%d-%H%M%S")
     model = model_factory(params)
+    start_epoch = 1
     if ckpt is not None:
         checkpoint = torch.load(ckpt)
         model.load_state_dict(checkpoint)
         print("Loaded model from ", ckpt)
+        start_epoch = int(ckpt.split('/')[-1].split('.')[0].split('epoch')[-1]) + 1
+        print("Starting from epoch ", start_epoch)
 
     model_name = 'model_' + params.model_params.backbone + params.model_params.pooling + \
                  '_' + now_strftime.replace('-', '_')
@@ -131,7 +134,7 @@ def do_train(dataloaders, params: MinkLocParams, ckpt=None, debug=False, visuali
     # Training statistics
     stats = {'train': [], 'val': [], 'eval': []}
 
-    for epoch in tqdm.tqdm(range(1, params.epochs + 1)):
+    for epoch in tqdm.tqdm(range(start_epoch, params.epochs + 1)):
         for phase in phases:
             if phase == 'train':
                 model.train()
@@ -229,8 +232,8 @@ def do_train(dataloaders, params: MinkLocParams, ckpt=None, debug=False, visuali
 
         print('')
 
-        # if params.dataset_name != 'TUM' and epoch % 10 != 0 and epoch != 0 and epoch < params.epochs:
-        #     continue
+        if params.dataset_name != 'TUM' and epoch % 10 != 0 and epoch > 0 and epoch < params.epochs:
+            continue
 
         # Save model weights
         final_model_path = os.path.join(model_pathname, f'epoch{epoch}.pth')

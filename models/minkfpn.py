@@ -15,7 +15,7 @@ import time
 class MinkFPN(ResNetBase):
     # Feature Pyramid Network (FPN) architecture implementation using Minkowski ResNet building blocks
     def __init__(self, in_channels, out_channels, num_top_down=1, conv0_kernel_size=5, block=BasicBlock,
-                 layers=(1, 1, 1), planes=(32, 64, 64), combine_params=None):
+                 layers=(1, 1, 1), planes=(32, 64, 64), combine_params=None, dataset_name='Usyd'):
         assert len(layers) == len(planes)
         assert 1 <= len(layers)
         assert 0 <= num_top_down <= len(layers)
@@ -28,22 +28,25 @@ class MinkFPN(ResNetBase):
         self.lateral_dim = out_channels
         self.init_dim = planes[0]
         ResNetBase.__init__(self, in_channels, out_channels, D=3)
-        
+
         self.with_cross_att = True if 'pointnet_cross_attention' in combine_params or 'multi_cross_attention' in combine_params else False
         if self.with_cross_att:
             cross_att_key = 'pointnet_cross_attention' if 'pointnet_cross_attention' in combine_params else 'multi_cross_attention'
 
         self.with_self_att = combine_params['self_attention'] if 'self_attention' in combine_params else None
         self.linear_weight = combine_params['linear_weight'] if 'linear_weight' in combine_params else None
-        
+
+        self.dataset = dataset_name
+
         if self.with_self_att:
             self.num_attention_layers = combine_params['self_attention']['num_layers']
-            d_embed_list =  [ layer * [plane] for layer, plane in zip(layers, planes) ] 
+            d_embed_list =  [ layer * [plane] for layer, plane in zip(layers, planes) ]
             #### oxford####
-            # d_embed_list = [planes[0]] + [ item for list in d_embed_list for item in list ] + [self.lateral_dim] * (num_top_down+1)
+            if self.dataset == 'Oxford':
+                d_embed_list = [planes[0]] + [ item for list in d_embed_list for item in list ] + [self.lateral_dim] * (num_top_down+1)
             ###############
-
-            d_embed_list = [ item for list in d_embed_list for item in list ] + [self.lateral_dim] * (num_top_down+1)
+            else:
+                d_embed_list = [ item for list in d_embed_list for item in list ] + [self.lateral_dim] * (num_top_down+1)
             self.self_pos_embed = PositionEmbeddingLearned(3, 3)
             self.self_attention_layers = nn.ModuleList()
 
@@ -56,16 +59,16 @@ class MinkFPN(ResNetBase):
                                                     dilation=combine_params['self_attention']['dilation'],
                                                     num_heads=combine_params['self_attention']['num_heads'],
                                                     linear_att=combine_params['self_attention']['linear_att']))
-            
+
         if self.with_cross_att:
             d_embed = planes[0] # cross attention after first layer of conv
             self.transformer_encoder_has_pos_emb = combine_params[cross_att_key]['transformer_encoder_has_pos_emb']
             self.pos_embed = PositionEmbeddingLearned(3, d_embed)
-            
-            encoder_layer = TransformerCrossEncoderLayer( 
+
+            encoder_layer = TransformerCrossEncoderLayer(
                 d_model=d_embed,
                 nhead=combine_params[cross_att_key]['nhead'],
-                dim_feedforward=combine_params[cross_att_key]['d_feedforward'], 
+                dim_feedforward=combine_params[cross_att_key]['d_feedforward'],
                 dropout=combine_params[cross_att_key]['dropout'],
                 activation=combine_params[cross_att_key]['transformer_act'],
                 normalize_before=combine_params[cross_att_key]['pre_norm'],
@@ -117,19 +120,19 @@ class MinkFPN(ResNetBase):
                                                         stride=1, dimension=D))
 
         self.relu = ME.MinkowskiReLU(inplace=True)
-        
+
     def batch_feat_size(self,x) -> List[int]:
         _, batch_feat_size = torch.unique(x[:,0], return_counts=True)
         return batch_feat_size.tolist()
-    
+
     def batch_tolist(self, x:TensorType, seq:List[int]) -> List[TensorType]:
         x = list(torch.split(x, seq))
         return x
-    
+
     def combine_cross_attention(self, x, y_c, y_f, time_file=None):
         x_batch_feat_size = self.batch_feat_size(x.C)
         y_batch_feat_size = self.batch_feat_size(y_c)
-        
+
         x_pe = self.batch_tolist(self.pos_embed(x.C[:, 1:].to(torch.float)), x_batch_feat_size)
         y_pe = self.batch_tolist(self.pos_embed(y_c[:, 1:].to(torch.float)), y_batch_feat_size)
         y_feats_un = self.batch_tolist(y_f, y_batch_feat_size)
@@ -137,12 +140,12 @@ class MinkFPN(ResNetBase):
 
         x_pe_padded, _, _ = pad_sequence(x_pe)
         y_pe_padded, _, _ = pad_sequence(y_pe)
-        
+
         x_feats_padded, x_key_padding_mask, _ = pad_sequence(x_feats_un,
                                                                 require_padding_mask=True)
         y_feats_padded, y_key_padding_mask, _ = pad_sequence(y_feats_un,
                                                                 require_padding_mask=True)
-        
+
         x_feats_cond, y_feats_cond, cross_attention_time_dict = self.transformer_encoder(
             x_feats_padded, y_feats_padded,
             src_key_padding_mask=x_key_padding_mask,
@@ -151,15 +154,15 @@ class MinkFPN(ResNetBase):
             tgt_pos=y_pe_padded if self.transformer_encoder_has_pos_emb else None,
             time_file=time_file
         )
-        
+
         x_feats_cond = torch.squeeze(x_feats_cond, dim=0)
         y_feats_cond = torch.squeeze(y_feats_cond, dim=0)
         x_feats_list = unpad_sequences(x_feats_cond, x_batch_feat_size)
         # y_feats_list = unpad_sequences(y_feats_cond, y_batch_feat_size)
-        
+
         x_feats = torch.vstack(x_feats_list)
         # y_feats = torch.vstack(y_feats_list)
-        
+
         x = ME.SparseTensor(coordinates=x.C, features=x_feats)
 
         return x, cross_attention_time_dict
@@ -180,16 +183,16 @@ class MinkFPN(ResNetBase):
             cross_attention_time_dict = {'linear_attention': 0, 'dot_prod': 0}
 
         #### oxford six layers
-        # if self.with_self_att:
-        #     tmp_num_attention_layers = self.num_attention_layers
-        #     pos_embeds = self.self_pos_embed(x.C[:, 1:].to(torch.float))
-        #     layer_idx = self.num_attention_layers-tmp_num_attention_layers
-        #     x = self.self_attention_layers[layer_idx](x, pos_embeds)
-        #     tmp_num_attention_layers -= 1
-
         if self.with_self_att:
-            tmp_num_attention_layers = self.num_attention_layers
-        
+            if self.dataset == 'Oxford':
+                tmp_num_attention_layers = self.num_attention_layers
+                pos_embeds = self.self_pos_embed(x.C[:, 1:].to(torch.float))
+                layer_idx = self.num_attention_layers-tmp_num_attention_layers
+                x = self.self_attention_layers[layer_idx](x, pos_embeds)
+                tmp_num_attention_layers -= 1
+            else:
+                tmp_num_attention_layers = self.num_attention_layers
+
         self_attention_time = 0
 
         # BOTTOM-UP PASS
