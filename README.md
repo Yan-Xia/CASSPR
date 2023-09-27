@@ -82,7 +82,7 @@ python train.py --config ../config/config_usyd.txt --model_config ../config/mode
 
 ```
 
-We release pre-trained models on the USyd and Oxford datasets in https://github.com/Yan-Xia/CASSPR/pretrained. Please note that the results are slightly different from the ones reported in the main paper (see [notes](https://github.com/Yan-Xia/CASSPR/pretrained/notes.txt)).
+We release pre-trained models on the USyd and Oxford datasets in https://github.com/Yan-Xia/CASSPR/tree/main/pretrained. Please note that the results are slightly different from the ones reported in the main paper (see [notes](https://github.com/Yan-Xia/CASSPR/blob/main/pretrained/notes.txt)).
 
 To evaluate the pre-trained USyd model, run:
 ```
