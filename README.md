@@ -73,7 +73,7 @@ python generate_test_sets_usyd.py
 ```
 
 ## Training and evaluation
-To train our CASSPR, run:
+To train our CASSPR, change ```dataset_folder``` in the config file and run:
 ```
 cd training
 
@@ -82,13 +82,13 @@ python train.py --config ../config/config_usyd.txt --model_config ../config/mode
 
 ```
 
-To evaluate the pre-trained model, run:
+We release pre-trained models on the USyd and Oxford datasets in https://github.com/Yan-Xia/CASSPR/pretrained. Please note that the results are slightly different from the ones reported in the main paper (see [notes](https://github.com/Yan-Xia/CASSPR/pretrained/notes.txt)).
+
+To evaluate the pre-trained USyd model, run:
 ```
 cd eval
 
-
-# To evaluate the model trained on the USyd Dataset
-python evaluate.py --config ../config/config_usyd.txt --model_config ../config/minkloc_configmodel_config_usydtxt --weights ../weights/CASSPR-USyd.pth
+python evaluate.py --config ../config/config_usyd.txt --model_config ../config/model_config_usyd.txt --weights ../pretrained/CASSPR-USyd.pth
 ```
 ## References:
 The code is in heavily built on [MinkLoc3D-SI](https://github.com/KamilZywanowski/MinkLoc3D-SI).
