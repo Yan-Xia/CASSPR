@@ -1,8 +1,3 @@
-# Author: Jacek Komorowski
-# Warsaw University of Technology
-# Modified by: Kamil Zywanowski, Adam Banaszczyk, Michal Nowicki (Poznan University of Technology 2021)
-
-#### ToDo: INCORPORATE POINTNETVLAD FEATURES ####
 import csv
 from tkinter import W
 from models.pointnet.PointNet import PointNetfeatv1
